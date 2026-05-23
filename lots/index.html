@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traçabilité des lots de miel · William Durand</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="card search">
+    <h1>Traçabilité des lots de miel</h1>
+    <p class="subtitle">Saisissez le numéro de lot indiqué sur le couvercle (format JJ-MM-AA)</p>
+    <form onsubmit="return lookupBatch(event);">
+      <input type="search" id="batch" placeholder="ex. 20-05-26"
+             pattern="\d{2}-\d{2}-\d{2}" autocomplete="off" required>
+      <button type="submit">Voir</button>
+    </form>
+    <p class="error" id="error" role="alert"></p>
+    <footer><a href="./">William Durand</a></footer>
+  </main>
+<script id="known-batches" type="application/json">["22-11-27", "21-11-27", "20-11-27", "19-11-27", "10-05-27", "03-03-27", "27-02-27", "27-01-27", "22-01-27", "21-01-27"]</script>
+  <script>
+    const known = new Set(JSON.parse(document.getElementById('known-batches').textContent));
+
+    function lookupBatch(e) {
+      e.preventDefault();
+      const v = document.getElementById('batch').value.trim();
+      const err = document.getElementById('error');
+      if (!/^\d{2}-\d{2}-\d{2}$/.test(v)) {
+        err.textContent = "Format attendu : JJ-MM-AA";
+        return false;
+      }
+      if (!known.has(v)) {
+        err.textContent = "Lot inconnu : " + v;
+        return false;
+      }
+      err.textContent = "";
+      window.location.href = encodeURIComponent(v) + ".html";
+      return false;
+    }
+  </script>
+</body>
+</html>

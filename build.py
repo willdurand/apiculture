@@ -17,144 +17,21 @@ DEFAULT_LOCATION = "Plaine de la Limagne, Auvergne, France"
 DEFAULT_BEEKEEPER = "William Durand"
 
 LEDGER_NAME = "batches.jsonl"
+STYLESHEET_NAME = "styles.css"
 
+# Themes only carry French labels now. Their colors live in styles.css
+# (selected via the `theme-<season>` class on <body>).
 THEMES = {
     "spring": {
         "label": "Printemps",
         "title": "Miel de printemps",
-        "bg": "#eaf6ee",
-        "accent": "#2f9e6b",
-        "accent_soft": "#cfeadb",
-        "tag_fg": "#1f5a3d",
     },
     "summer": {
         "label": "Été",
         "title": "Miel d'été",
-        "bg": "#fff1d6",
-        "accent": "#c2410c",
-        "accent_soft": "#ffd9a8",
-        "tag_fg": "#7a2e08",
     },
 }
 
-
-THEME_VARS_TPL = Template(
-    """  :root {
-    --bg: $bg;
-    --card: #ffffff;
-    --accent: $accent;
-    --accent-soft: $accent_soft;
-    --text: #3a2e1f;
-    --muted: #8a7a5e;
-  }"""
-)
-
-PAGE_STYLE = """  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-  .card {
-    background: var(--card);
-    border-radius: 16px;
-    border-top: 6px solid var(--accent);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    max-width: 600px;
-    padding: 1.75rem 1.25rem;
-    width: 100%;
-  }
-  h1 {
-    font-size: 1.35rem;
-    letter-spacing: 0.5px;
-    margin: 0.5rem 0 0.25rem;
-    text-align: center;
-  }
-  .subtitle {
-    text-align: center;
-    color: var(--muted);
-    margin-bottom: 2rem;
-    font-size: 0.95rem;
-  }
-  dl {
-    display: grid;
-    gap: 1rem;
-    margin: 0;
-  }
-  .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 1px dashed #eee;
-    padding-bottom: 0.6rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-    flex-direction: column;
-  }
-  dt {
-    color: var(--muted);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  dd {
-    margin: 0;
-    font-weight: 600;
-    text-align: right;
-  }
-  .explainer {
-    margin-top: 1.5rem;
-    padding: 1rem 1.1rem;
-    background: var(--accent-soft);
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    line-height: 1.5;
-
-    & :first-child {
-      margin-top: 0;
-    }
-
-    & :last-child {
-      margin-bottom: 0;
-    }
-  }
-  footer {
-    text-align: center;
-    margin-top: 2rem;
-    color: var(--muted);
-    font-size: 0.8rem;
-  }
-  @media (min-width: 600px) {
-    h1 {
-      font-size: 1.6rem;
-    }
-    .card {
-      padding: 2.5rem 2rem;
-    }
-    .row {
-      flex-direction: row;
-    }
-  }
-  @media print {
-    body {
-      background: #fff;
-      padding: 0;
-    }
-    .card {
-      box-shadow: none;
-      border-radius: 0;
-      border-top-width: 4px;
-    }
-  }"""
 
 PAGE_TEMPLATE = Template(
     """<!DOCTYPE html>
@@ -164,12 +41,9 @@ PAGE_TEMPLATE = Template(
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Traçabilité du lot de miel n°$batch récolté par $beekeeper.">
 <title>$title · Lot n°$batch · $beekeeper</title>
-<style>
-$theme_vars
-$page_style
-</style>
+<link rel="stylesheet" href="$stylesheet">
 </head>
-<body>
+<body class="theme-$season">
   <main class="card">
     <h1>$title</h1>
     <p class="subtitle">Numéro de lot : <strong>$batch</strong></p>
@@ -179,12 +53,79 @@ $page_style
       <div class="row"><dt>Récolté le</dt><dd>$harvested</dd></div>
       <div class="row"><dt>Lieu de récolte</dt><dd>$location</dd></div>$hives_row
     </dl>$explainer_block
-    <footer>$beekeeper</footer>
+    <footer><a href="./">$beekeeper</a></footer>
   </main>
 </body>
 </html>
 """
 )
+
+
+INDEX_HTML = Template(
+    """<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traçabilité des lots de miel · $beekeeper</title>
+<link rel="stylesheet" href="$stylesheet">
+</head>
+<body>
+  <main class="card search">
+    <h1>Traçabilité des lots de miel</h1>
+    <p class="subtitle">Saisissez le numéro de lot indiqué sur le couvercle (format JJ-MM-AA)</p>
+    <form onsubmit="return lookupBatch(event);">
+      <input type="search" id="batch" placeholder="ex. 20-05-26"
+             pattern="\\d{2}-\\d{2}-\\d{2}" autocomplete="off" required>
+      <button type="submit">Voir</button>
+    </form>
+    <p class="error" id="error" role="alert"></p>
+    <footer><a href="./">$beekeeper</a></footer>
+  </main>
+<script id="known-batches" type="application/json">$batches_json</script>
+  <script>
+    const known = new Set(JSON.parse(document.getElementById('known-batches').textContent));
+
+    function lookupBatch(e) {
+      e.preventDefault();
+      const v = document.getElementById('batch').value.trim();
+      const err = document.getElementById('error');
+      if (!/^\\d{2}-\\d{2}-\\d{2}$$/.test(v)) {
+        err.textContent = "Format attendu : JJ-MM-AA";
+        return false;
+      }
+      if (!known.has(v)) {
+        err.textContent = "Lot inconnu : " + v;
+        return false;
+      }
+      err.textContent = "";
+      window.location.href = encodeURIComponent(v) + ".html";
+      return false;
+    }
+  </script>
+</body>
+</html>
+"""
+)
+
+
+def write_index(outdir):
+    records = read_ledger_records(outdir)
+    batches = sorted(
+        (rec["batch"] for rec in records),
+        key=parse_batch,
+        reverse=True,
+    )
+    index_path = outdir / "index.html"
+    index_path.write_text(
+        INDEX_HTML.substitute(
+            stylesheet=STYLESHEET_NAME,
+            beekeeper=DEFAULT_BEEKEEPER,
+            batches_json=json.dumps(batches),
+        ),
+        encoding="utf-8",
+    )
+    print(f"✓ Index   {index_path}")
 
 
 def parse_iso_date(s):
@@ -204,14 +145,6 @@ def parse_batch(batch):
 
 def fr_date(d):
     return d.strftime("%d/%m/%Y")
-
-
-def theme_vars(theme):
-    return THEME_VARS_TPL.substitute(
-        bg=theme["bg"],
-        accent=theme["accent"],
-        accent_soft=theme["accent_soft"],
-    )
 
 
 def append_ledger(outdir, record):
@@ -262,14 +195,14 @@ def build_page(record):
 
     return PAGE_TEMPLATE.substitute(
         batch=record["batch"],
+        season=record["season"],
         harvested=fr_date(harvested),
         bottled=fr_date(bottled),
         ddm=fr_date(ddm),
         location=html.escape(record["location"], quote=True),
         beekeeper=html.escape(record["beekeeper"], quote=True),
         title=title,
-        theme_vars=theme_vars(theme),
-        page_style=PAGE_STYLE,
+        stylesheet=STYLESHEET_NAME,
         explainer_block=explainer_block,
         hives_row=hives_row,
     )
@@ -288,6 +221,7 @@ def do_rebuild(outdir):
             page_path = outdir / f"{rec['batch']}.html"
             page_path.write_text(build_page(rec), encoding="utf-8")
             print(f"✓ Page    {page_path}")
+    write_index(outdir)
 
 
 def main():
@@ -344,7 +278,6 @@ def main():
     outdir = Path(args.outdir)
 
     if args.rebuild:
-        # Reject flags that don't make sense alongside --rebuild.
         conflicting = [
             ("batch", args.batch),
             ("--harvested", args.harvested),
@@ -410,6 +343,7 @@ def main():
 
     append_ledger(outdir, record)
     print(f"✓ Ledger  {outdir / LEDGER_NAME}")
+    write_index(outdir)
 
 
 if __name__ == "__main__":
